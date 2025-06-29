@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -14,10 +15,11 @@ from database import get_db
 # Konfigurasi Password Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Konfigurasi JWT
-SECRET_KEY = "your-super-secret-key" # Ganti dengan kunci rahasia yang kuat
+# Konfigurasi JWT dengan environment variables untuk keamanan
+# Default key hanya untuk development - HARUS diganti di production
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-key-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

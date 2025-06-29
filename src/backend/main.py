@@ -26,66 +26,95 @@ def read_root():
     return {"message": "Tanam Rawat API"}
 
 @app.post("/identify")
-async def identify_plant(file: UploadFile = File(...)):
+async def identify_plant(file: UploadFile = File(...), current_user: schemas.User = Depends(auth.get_current_user)):
     """
     Endpoint untuk identifikasi tanaman berdasarkan gambar yang diunggah.
     
     CATATAN IMPLEMENTASI SAAT INI:
     - Ini adalah implementasi simulasi/dummy untuk fase MVP
     - Endpoint menerima file gambar dan mengembalikan hasil identifikasi acak
+    - File temporary dibersihkan setelah diproses untuk mencegah penumpukan data
     - Pada implementasi final, akan diganti dengan model AI yang sesungguhnya
     
     Args:
         file (UploadFile): File gambar tanaman yang akan diidentifikasi
+        current_user: User yang sedang login (untuk autentikasi)
         
     Returns:
         dict: Hasil identifikasi dengan nama tanaman, confidence score, dan tips perawatan
         
     Raises:
-        HTTPException: Jika file yang diunggah bukan gambar
+        HTTPException: Jika file yang diunggah bukan gambar atau terlalu besar
     """
-    
-    # Daftar nama tanaman untuk simulasi - akan diganti dengan database tanaman nyata
-    # Dipilih tanaman hias populer yang mudah dikenali untuk testing UI
-    plant_names = [
-        "Monstera Deliciosa",
-        "Sansevieria Trifasciata", 
-        "Pothos Aureus",
-        "Ficus Lyrata",
-        "Aloe Vera",
-        "Philodendron Hederaceum",
-        "Dracaena Marginata",
-        "Zamioculcas Zamiifolia"
-    ]
+    import tempfile
+    import os
     
     # Validasi tipe file untuk memastikan hanya gambar yang diterima
-    # Mencegah upload file berbahaya atau format yang tidak didukung
     if not file.content_type.startswith('image/'):
         raise HTTPException(status_code=400, detail="File harus berupa gambar")
     
-    # SIMULASI: Pilih tanaman acak dan generate confidence score realistis
-    # Pada implementasi nyata, di sini akan ada:
-    # 1. Preprocessing gambar (resize, normalize)
-    # 2. Inference dengan model AI
-    # 3. Post-processing hasil prediksi
-    identified_plant = random.choice(plant_names)
+    # Validasi ukuran file (maksimal 10MB)
+    max_size = 10 * 1024 * 1024  # 10MB
+    file_content = await file.read()
+    if len(file_content) > max_size:
+        raise HTTPException(status_code=400, detail="Ukuran file terlalu besar (maksimal 10MB)")
     
-    # Generate confidence score antara 75-95% untuk simulasi yang realistis
-    # Score di bawah 75% biasanya dianggap tidak reliable untuk identifikasi tanaman
-    confidence = round(random.uniform(0.75, 0.95), 2)
+    # Reset file pointer untuk pembacaan ulang jika diperlukan
+    await file.seek(0)
     
-    # Return format yang konsisten dengan schema frontend
-    # Format ini dirancang untuk mudah diperluas dengan informasi tambahan
-    return {
-        "plant_name": identified_plant,
-        "confidence": confidence,
-        "description": f"Tanaman ini teridentifikasi sebagai {identified_plant} dengan tingkat kepercayaan {confidence*100}%",
-        "care_tips": [
-            "Letakkan di tempat dengan cahaya tidak langsung",
-            "Siram ketika tanah terasa kering", 
-            "Berikan pupuk setiap 2-4 minggu sekali"
+    temp_file_path = None
+    try:
+        # Simpan file temporary untuk processing
+        # Menggunakan tempfile untuk keamanan dan pembersihan otomatis
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
+            temp_file_path = temp_file.name
+            temp_file.write(file_content)
+        
+        # Daftar nama tanaman untuk simulasi - akan diganti dengan database tanaman nyata
+        # Dipilih tanaman hias populer yang mudah dikenali untuk testing UI
+        plant_names = [
+            "Monstera Deliciosa",
+            "Sansevieria Trifasciata", 
+            "Pothos Aureus",
+            "Ficus Lyrata",
+            "Aloe Vera",
+            "Philodendron Hederaceum",
+            "Dracaena Marginata",
+            "Zamioculcas Zamiifolia"
         ]
-    }
+        
+        # SIMULASI: Pilih tanaman acak dan generate confidence score realistis
+        # Pada implementasi nyata, di sini akan ada:
+        # 1. Preprocessing gambar (resize, normalize)
+        # 2. Inference dengan model AI
+        # 3. Post-processing hasil prediksi
+        identified_plant = random.choice(plant_names)
+        
+        # Generate confidence score antara 75-95% untuk simulasi yang realistis
+        # Score di bawah 75% biasanya dianggap tidak reliable untuk identifikasi tanaman
+        confidence = round(random.uniform(0.75, 0.95), 2)
+        
+        # Return format yang konsisten dengan schema frontend
+        # Format ini dirancang untuk mudah diperluas dengan informasi tambahan
+        return {
+            "plant_name": identified_plant,
+            "confidence": confidence,
+            "description": f"Tanaman ini teridentifikasi sebagai {identified_plant} dengan tingkat kepercayaan {confidence*100}%",
+            "care_tips": [
+                "Letakkan di tempat dengan cahaya tidak langsung",
+                "Siram ketika tanah terasa kering", 
+                "Berikan pupuk setiap 2-4 minggu sekali"
+            ]
+        }
+    
+    finally:
+        # Pembersihan file temporary untuk mencegah penumpukan data
+        # Penting untuk keamanan dan efisiensi storage
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)
+            except OSError:
+                pass  # File mungkin sudah terhapus, tidak masalah
 
 # User Registration and Authentication
 
