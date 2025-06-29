@@ -408,3 +408,743 @@ def delete_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), cur
     db.delete(db_pest_disease)
     db.commit()
     return {"message": "PestDisease deleted successfully"}
+
+# CRUD Endpoints for Posts
+
+@app.post("/posts/", response_model=schemas.Post)
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = models.Post(**post.dict(), owner_id=current_user.id)
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.get("/posts/", response_model=List[schemas.Post])
+def read_posts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    posts = db.query(models.Post).offset(skip).limit(limit).all()
+    return posts
+
+@app.get("/posts/{post_id}", response_model=schemas.Post)
+def read_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@app.put("/posts/{post_id}", response_model=schemas.Post)
+def update_post(post_id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this post")
+    for key, value in post.dict().items():
+        setattr(db_post, key, value)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+    db.delete(db_post)
+    db.commit()
+    return {"message": "Post deleted successfully"}
+
+# CRUD Endpoints for Comments
+
+@app.post("/comments/", response_model=schemas.Comment)
+def create_comment(comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = models.Comment(**comment.dict(), owner_id=current_user.id)
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.get("/comments/", response_model=List[schemas.Comment])
+def read_comments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    comments = db.query(models.Comment).offset(skip).limit(limit).all()
+    return comments
+
+@app.get("/comments/{comment_id}", response_model=schemas.Comment)
+def read_comment(comment_id: int, db: Session = Depends(get_db)):
+    comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return comment
+
+@app.put("/comments/{comment_id}", response_model=schemas.Comment)
+def update_comment(comment_id: int, comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this comment")
+    for key, value in comment.dict().items():
+        setattr(db_comment, key, value)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.delete("/comments/{comment_id}")
+def delete_comment(comment_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+    db.delete(db_comment)
+    db.commit()
+    return {"message": "Comment deleted successfully"}
+
+# CRUD Endpoints for PestDiseases
+
+@app.post("/pest_diseases/", response_model=schemas.PestDisease)
+def create_pest_disease(pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = models.PestDisease(**pest_disease.dict())
+    db.add(db_pest_disease)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.get("/pest_diseases/", response_model=List[schemas.PestDisease])
+def read_pest_diseases(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_diseases = db.query(models.PestDisease).offset(skip).limit(limit).all()
+    return pest_diseases
+
+@app.get("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def read_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    return pest_disease
+
+@app.put("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def update_pest_disease(pest_disease_id: int, pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    for key, value in pest_disease.dict().items():
+        setattr(db_pest_disease, key, value)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.delete("/pest_diseases/{pest_disease_id}")
+def delete_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    db.delete(db_pest_disease)
+    db.commit()
+    return {"message": "PestDisease deleted successfully"}
+
+# CRUD Endpoints for Posts
+
+@app.post("/posts/", response_model=schemas.Post)
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = models.Post(**post.dict(), owner_id=current_user.id)
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.get("/posts/", response_model=List[schemas.Post])
+def read_posts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    posts = db.query(models.Post).offset(skip).limit(limit).all()
+    return posts
+
+@app.get("/posts/{post_id}", response_model=schemas.Post)
+def read_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@app.put("/posts/{post_id}", response_model=schemas.Post)
+def update_post(post_id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this post")
+    for key, value in post.dict().items():
+        setattr(db_post, key, value)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+    db.delete(db_post)
+    db.commit()
+    return {"message": "Post deleted successfully"}
+
+# CRUD Endpoints for Comments
+
+@app.post("/comments/", response_model=schemas.Comment)
+def create_comment(comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = models.Comment(**comment.dict(), owner_id=current_user.id)
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.get("/comments/", response_model=List[schemas.Comment])
+def read_comments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    comments = db.query(models.Comment).offset(skip).limit(limit).all()
+    return comments
+
+@app.get("/comments/{comment_id}", response_model=schemas.Comment)
+def read_comment(comment_id: int, db: Session = Depends(get_db)):
+    comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return comment
+
+@app.put("/comments/{comment_id}", response_model=schemas.Comment)
+def update_comment(comment_id: int, comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this comment")
+    for key, value in comment.dict().items():
+        setattr(db_comment, key, value)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.delete("/comments/{comment_id}")
+def delete_comment(comment_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+    db.delete(db_comment)
+    db.commit()
+    return {"message": "Comment deleted successfully"}
+
+# CRUD Endpoints for PestDiseases
+
+@app.post("/pest_diseases/", response_model=schemas.PestDisease)
+def create_pest_disease(pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = models.PestDisease(**pest_disease.dict())
+    db.add(db_pest_disease)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.get("/pest_diseases/", response_model=List[schemas.PestDisease])
+def read_pest_diseases(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_diseases = db.query(models.PestDisease).offset(skip).limit(limit).all()
+    return pest_diseases
+
+@app.get("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def read_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    return pest_disease
+
+@app.put("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def update_pest_disease(pest_disease_id: int, pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    for key, value in pest_disease.dict().items():
+        setattr(db_pest_disease, key, value)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.delete("/pest_diseases/{pest_disease_id}")
+def delete_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    db.delete(db_pest_disease)
+    db.commit()
+    return {"message": "PestDisease deleted successfully"}
+
+# CRUD Endpoints for Posts
+
+@app.post("/posts/", response_model=schemas.Post)
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = models.Post(**post.dict(), owner_id=current_user.id)
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.get("/posts/", response_model=List[schemas.Post])
+def read_posts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    posts = db.query(models.Post).offset(skip).limit(limit).all()
+    return posts
+
+@app.get("/posts/{post_id}", response_model=schemas.Post)
+def read_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@app.put("/posts/{post_id}", response_model=schemas.Post)
+def update_post(post_id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this post")
+    for key, value in post.dict().items():
+        setattr(db_post, key, value)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+    db.delete(db_post)
+    db.commit()
+    return {"message": "Post deleted successfully"}
+
+# CRUD Endpoints for Comments
+
+@app.post("/comments/", response_model=schemas.Comment)
+def create_comment(comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = models.Comment(**comment.dict(), owner_id=current_user.id)
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.get("/comments/", response_model=List[schemas.Comment])
+def read_comments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    comments = db.query(models.Comment).offset(skip).limit(limit).all()
+    return comments
+
+@app.get("/comments/{comment_id}", response_model=schemas.Comment)
+def read_comment(comment_id: int, db: Session = Depends(get_db)):
+    comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return comment
+
+@app.put("/comments/{comment_id}", response_model=schemas.Comment)
+def update_comment(comment_id: int, comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this comment")
+    for key, value in comment.dict().items():
+        setattr(db_comment, key, value)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.delete("/comments/{comment_id}")
+def delete_comment(comment_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+    db.delete(db_comment)
+    db.commit()
+    return {"message": "Comment deleted successfully"}
+
+# CRUD Endpoints for PestDiseases
+
+@app.post("/pest_diseases/", response_model=schemas.PestDisease)
+def create_pest_disease(pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = models.PestDisease(**pest_disease.dict())
+    db.add(db_pest_disease)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.get("/pest_diseases/", response_model=List[schemas.PestDisease])
+def read_pest_diseases(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_diseases = db.query(models.PestDisease).offset(skip).limit(limit).all()
+    return pest_diseases
+
+@app.get("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def read_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    return pest_disease
+
+@app.put("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def update_pest_disease(pest_disease_id: int, pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    for key, value in pest_disease.dict().items():
+        setattr(db_pest_disease, key, value)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.delete("/pest_diseases/{pest_disease_id}")
+def delete_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    db.delete(db_pest_disease)
+    db.commit()
+    return {"message": "PestDisease deleted successfully"}
+
+# CRUD Endpoints for Posts
+
+@app.post("/posts/", response_model=schemas.Post)
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = models.Post(**post.dict(), owner_id=current_user.id)
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.get("/posts/", response_model=List[schemas.Post])
+def read_posts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    posts = db.query(models.Post).offset(skip).limit(limit).all()
+    return posts
+
+@app.get("/posts/{post_id}", response_model=schemas.Post)
+def read_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@app.put("/posts/{post_id}", response_model=schemas.Post)
+def update_post(post_id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this post")
+    for key, value in post.dict().items():
+        setattr(db_post, key, value)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+    db.delete(db_post)
+    db.commit()
+    return {"message": "Post deleted successfully"}
+
+# CRUD Endpoints for Comments
+
+@app.post("/comments/", response_model=schemas.Comment)
+def create_comment(comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = models.Comment(**comment.dict(), owner_id=current_user.id)
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.get("/comments/", response_model=List[schemas.Comment])
+def read_comments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    comments = db.query(models.Comment).offset(skip).limit(limit).all()
+    return comments
+
+@app.get("/comments/{comment_id}", response_model=schemas.Comment)
+def read_comment(comment_id: int, db: Session = Depends(get_db)):
+    comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return comment
+
+@app.put("/comments/{comment_id}", response_model=schemas.Comment)
+def update_comment(comment_id: int, comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this comment")
+    for key, value in comment.dict().items():
+        setattr(db_comment, key, value)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.delete("/comments/{comment_id}")
+def delete_comment(comment_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+    db.delete(db_comment)
+    db.commit()
+    return {"message": "Comment deleted successfully"}
+
+# CRUD Endpoints for PestDiseases
+
+@app.post("/pest_diseases/", response_model=schemas.PestDisease)
+def create_pest_disease(pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = models.PestDisease(**pest_disease.dict())
+    db.add(db_pest_disease)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.get("/pest_diseases/", response_model=List[schemas.PestDisease])
+def read_pest_diseases(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_diseases = db.query(models.PestDisease).offset(skip).limit(limit).all()
+    return pest_diseases
+
+@app.get("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def read_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    return pest_disease
+
+@app.put("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def update_pest_disease(pest_disease_id: int, pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    for key, value in pest_disease.dict().items():
+        setattr(db_pest_disease, key, value)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.delete("/pest_diseases/{pest_disease_id}")
+def delete_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    db.delete(db_pest_disease)
+    db.commit()
+    return {"message": "PestDisease deleted successfully"}
+
+# CRUD Endpoints for Posts
+
+@app.post("/posts/", response_model=schemas.Post)
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = models.Post(**post.dict(), owner_id=current_user.id)
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.get("/posts/", response_model=List[schemas.Post])
+def read_posts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    posts = db.query(models.Post).offset(skip).limit(limit).all()
+    return posts
+
+@app.get("/posts/{post_id}", response_model=schemas.Post)
+def read_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@app.put("/posts/{post_id}", response_model=schemas.Post)
+def update_post(post_id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this post")
+    for key, value in post.dict().items():
+        setattr(db_post, key, value)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+    db.delete(db_post)
+    db.commit()
+    return {"message": "Post deleted successfully"}
+
+# CRUD Endpoints for Comments
+
+@app.post("/comments/", response_model=schemas.Comment)
+def create_comment(comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = models.Comment(**comment.dict(), owner_id=current_user.id)
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.get("/comments/", response_model=List[schemas.Comment])
+def read_comments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    comments = db.query(models.Comment).offset(skip).limit(limit).all()
+    return comments
+
+@app.get("/comments/{comment_id}", response_model=schemas.Comment)
+def read_comment(comment_id: int, db: Session = Depends(get_db)):
+    comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return comment
+
+@app.put("/comments/{comment_id}", response_model=schemas.Comment)
+def update_comment(comment_id: int, comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this comment")
+    for key, value in comment.dict().items():
+        setattr(db_comment, key, value)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.delete("/comments/{comment_id}")
+def delete_comment(comment_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if db_comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    if db_comment.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
+    db.delete(db_comment)
+    db.commit()
+    return {"message": "Comment deleted successfully"}
+
+# CRUD Endpoints for PestDiseases
+
+@app.post("/pest_diseases/", response_model=schemas.PestDisease)
+def create_pest_disease(pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = models.PestDisease(**pest_disease.dict())
+    db.add(db_pest_disease)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.get("/pest_diseases/", response_model=List[schemas.PestDisease])
+def read_pest_diseases(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_diseases = db.query(models.PestDisease).offset(skip).limit(limit).all()
+    return pest_diseases
+
+@app.get("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def read_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    return pest_disease
+
+@app.put("/pest_diseases/{pest_disease_id}", response_model=schemas.PestDisease)
+def update_pest_disease(pest_disease_id: int, pest_disease: schemas.PestDiseaseCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    for key, value in pest_disease.dict().items():
+        setattr(db_pest_disease, key, value)
+    db.commit()
+    db.refresh(db_pest_disease)
+    return db_pest_disease
+
+@app.delete("/pest_diseases/{pest_disease_id}")
+def delete_pest_disease(pest_disease_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_pest_disease = db.query(models.PestDisease).filter(models.PestDisease.id == pest_disease_id).first()
+    if db_pest_disease is None:
+        raise HTTPException(status_code=404, detail="PestDisease not found")
+    db.delete(db_pest_disease)
+    db.commit()
+    return {"message": "PestDisease deleted successfully"}
+
+# CRUD Endpoints for Posts
+
+@app.post("/posts/", response_model=schemas.Post)
+def create_post(post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = models.Post(**post.dict(), owner_id=current_user.id)
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.get("/posts/", response_model=List[schemas.Post])
+def read_posts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    posts = db.query(models.Post).offset(skip).limit(limit).all()
+    return posts
+
+@app.get("/posts/{post_id}", response_model=schemas.Post)
+def read_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@app.put("/posts/{post_id}", response_model=schemas.Post)
+def update_post(post_id: int, post: schemas.PostCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this post")
+    for key, value in post.dict().items():
+        setattr(db_post, key, value)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if db_post is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+    db.delete(db_post)
+    db.commit()
+    return {"message": "Post deleted successfully"}
+
+# CRUD Endpoints for Comments
+
+@app.post("/comments/", response_model=schemas.Comment)
+def create_comment(comment: schemas.CommentCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(auth.get_current_user)):
+    db_comment = models.Comment(**comment.dict(), owner_id=current_user.id)
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+@app.get("/comments/", response_model=List[schemas.Comment])
+def read_comments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    comments = db.query(models.Comment).offset(skip).limit(limit).all()
+    return comments
+
+@app.get("/comments/{comment_id}", response_model=schemas.Comment)
+def read_comment(comment_id: int, db: Session = Depends(get_db)):
+    comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return comment
+
+@app.put("/comments/{comment_id}", response_model=schemas.

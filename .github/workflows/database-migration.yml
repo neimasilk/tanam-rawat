@@ -1,0 +1,48 @@
+name: Database Migration
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/backend/migrations/**'
+      - 'src/backend/models.py'
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.9
+    
+    - name: Install dependencies
+      run: |
+        cd src/backend
+        pip install -r requirements.txt
+        pip install alembic
+    
+    - name: Run migrations (Staging)
+      if: github.ref == 'refs/heads/develop'
+      env:
+        DB_HOST: ${{ secrets.STAGING_DB_HOST }}
+        DB_USER: ${{ secrets.STAGING_DB_USER }}
+        DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+        DB_NAME: ${{ secrets.STAGING_DB_NAME }}
+      run: |
+        cd src/backend
+        alembic upgrade head
+    
+    - name: Run migrations (Production)
+      if: github.ref == 'refs/heads/main'
+      env:
+        DB_HOST: ${{ secrets.PROD_DB_HOST }}
+        DB_USER: ${{ secrets.PROD_DB_USER }}
+        DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+        DB_NAME: ${{ secrets.PROD_DB_NAME }}
+      run: |
+        cd src/backend
+        alembic upgrade head

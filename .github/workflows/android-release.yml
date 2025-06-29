@@ -1,0 +1,33 @@
+name: Android Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Build signed APK
+      run: |
+        cd src/frontend
+        npm ci
+        cd android
+        ./gradlew assembleRelease
+    
+    - name: Upload to Play Console
+      uses: r0adkll/upload-google-play@v1
+      with:
+        serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+        packageName: com.tanamrawat.app
+        releaseFiles: src/frontend/android/app/build/outputs/apk/release/app-release.apk
+        track: internal
